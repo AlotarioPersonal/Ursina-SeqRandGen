@@ -1,7 +1,7 @@
 ######################################
 #
 #   2D List-based Dimensional Exploration
-#   Logan Kaminski
+#   L. Kaminski
 #   Version 0.1, 2024-10-26
 #
 #   REQUIRED PACKAGES: ursina (pip install ursina)
