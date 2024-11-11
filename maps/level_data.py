@@ -1,5 +1,9 @@
-#level data, stored in 2-dimensional lists
 #all levels load the player in the top left corner of the list
+
+#all level data is stored in 2-dimensional lists, either as '1' or '0'
+#1 and 0 are registered as either a wall or a floor respectively. 
+#you can store as many 1s and 0s as you please in any given list meaning that
+#the potential size for any given blockmap is infinite
 
 level_data_1 = ([0,0,0,0,0,0,0],
               [1,1,1,1,1,0,0],
