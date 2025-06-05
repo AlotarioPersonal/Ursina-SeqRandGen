@@ -5,7 +5,8 @@
 #   Version 0.2, 2024-11-10
 #
 #   REQUIRED PACKAGES:
-#   -ursina
+#   -ursina/dependencies
+#   -threading
 #
 ######################################
 
@@ -15,18 +16,23 @@ from ursina.prefabs.first_person_controller import FirstPersonController
 from ursina.shaders import basic_lighting_shader
 import threading
 
-maplevelname = level_data.level_data_rand
+maplevelname = level_data.level_data_rand_big
 
 t_ev = threading.Event()
 app = Ursina() #define app
+Entity.geom=False
 from maps.entity_data import floor_ent
 from maps.entity_data import wall
 
 
-window.editor_ui.enabled = False #turn off dogshit editor ui
+#window.fullscreen_size=Vec2(640,480)
+#window.forced_aspect_ratio=Vec2(4,3)
+#window.size=Vec2(640, 480)
 player = FirstPersonController() #base ursina first person controller
 player.position=(0,0,0) #set pos
 player.mouse_sensitivity = Vec2(0, 0) #kill the mouse
+mouse.locked=False
+camera.clip_plane_far=150
 input_handler.bind('up arrow','w') #bind arrow keys forward and backward to movement, doom-style
 input_handler.bind('down arrow','s')
 input_handler.unbind('w') #unbind base keys
@@ -35,12 +41,11 @@ input_handler.unbind('s')
 input_handler.unbind('d')
 player.cursor.color = color.black #turns the cursor red hur dur fuck face
 player.jump_height = 0 #kills jumping
-#player.speed=5
 player_cam_speed = 2 #turn speed for the camera, left and right arrow keys
-skybox = Sky() #initialize skybox
+#skybox = Sky() #initialize skybox
 camera.fov = 110
 player.eternal=True
-skybox.eternal=True
+#skybox.eternal=True
 floor_ent.eternal=True
 wall.eternal=True
 floor_ent.position=Vec3(9999999,9999999,99999999)
@@ -58,6 +63,7 @@ player.speed = 13
 def resetScene():
     player.position=Vec3(0,0,0)
     scene.clear()
+            
 
 def input(key):
     global player_cam_speed
@@ -70,6 +76,7 @@ def input(key):
     
     if key == 'escape': #kill world
         quit()
+        app.run()
 
 
 
@@ -122,7 +129,7 @@ t1.start()
 
 def update():
     #
-    print(player.speed)
+    #print(player.speed)
     
     #doom/wolfenstein style turning
     if held_keys['left arrow']: #rotate left
