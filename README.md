@@ -5,9 +5,15 @@
 
 Contained in level-data.py is a repository of 2-dimensional levels. They can have three corresponding values in these lists--
 
+
+
 0 - Floor
+
 1 - Wall
+
 2 - Random
+
+
 
 Used this framework to create a game called Axe Quest. You can find it here: https://brimlessentertainment.itch.io/axe-quest-1994
 
