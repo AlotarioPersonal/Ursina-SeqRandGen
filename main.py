@@ -16,36 +16,40 @@ from ursina.prefabs.first_person_controller import FirstPersonController
 from ursina.shaders import basic_lighting_shader
 import threading
 
-maplevelname = level_data.level_data_rand_big
+maplevelname = level_data.level_data_rand
 
 t_ev = threading.Event()
 app = Ursina() #define app
 Entity.geom=False
 from maps.entity_data import floor_ent
 from maps.entity_data import wall
+floor_ent.geom=True
+wall.geom=True
 
 
-#window.fullscreen_size=Vec2(640,480)
-#window.forced_aspect_ratio=Vec2(4,3)
-#window.size=Vec2(640, 480)
+window.editor_ui.disable()
+
 player = FirstPersonController() #base ursina first person controller
 player.position=(0,0,0) #set pos
 player.mouse_sensitivity = Vec2(0, 0) #kill the mouse
-mouse.locked=False
-camera.clip_plane_far=150
+
+camera.clip_plane_far=75
 input_handler.bind('up arrow','w') #bind arrow keys forward and backward to movement, doom-style
 input_handler.bind('down arrow','s')
-input_handler.unbind('w') #unbind base keys
+input_handler.unbind('w')
 input_handler.unbind('a')
 input_handler.unbind('s')
 input_handler.unbind('d')
-player.cursor.color = color.black #turns the cursor red hur dur fuck face
+player.cursor.color = color.dark_gray #turns the cursor red hur dur fuck face
 player.jump_height = 0 #kills jumping
 player_cam_speed = 2 #turn speed for the camera, left and right arrow keys
-#skybox = Sky() #initialize skybox
+skybox = Sky() #initialize skybox
+skybox.texture="skybox.png"
+scene.fog_density=0.07
+scene.fog_color=color.black
 camera.fov = 110
 player.eternal=True
-#skybox.eternal=True
+skybox.eternal=True
 floor_ent.eternal=True
 wall.eternal=True
 floor_ent.position=Vec3(9999999,9999999,99999999)
@@ -53,7 +57,7 @@ wall.position=Vec3(9999999,9999999,99999999)
 
 last_indexed_ent = 0
 
-player.gravity = 0.8 #rate of which player character falls
+player.gravity = 0.98 #rate of which player character falls
 player.speed = 13
 
 
@@ -63,7 +67,8 @@ player.speed = 13
 def resetScene():
     player.position=Vec3(0,0,0)
     scene.clear()
-            
+    player.position=Vec3(0,0,0)
+
 
 def input(key):
     global player_cam_speed
@@ -95,36 +100,43 @@ def gen_level(map_dat): #generate level from 2D list. this is where the fun begi
                 x_incrementer += 1 #the next block is 1 over from this item in the row (loads from left to right)
                 indexer += 1 #tracks where you are in the row, so this needs to be incremented
                 last_indexed_ent=0
+                #floor_ent.combine()
             elif item == 1: #otherwise, it's a wall, make it a wall
                 wall_dup = duplicate(wall, position=Vec3(x_incrementer*10, -5, z_incrementer*10))
                 wall_dup.eternal=False
                 x_incrementer += 1
                 indexer += 1
                 last_indexed_ent=1
+                #wall.combine()
             elif item == 2: #random generation function
-                random_tile = random.randint(0,1)
+                random_tile = random.randrange(0,100)
                 
-                if random_tile==1:
+                if random_tile<=25:
                     wall_dup = duplicate(wall, position=Vec3(x_incrementer*10, -5, z_incrementer*10))
                     wall_dup.eternal=False
-                elif random_tile==0:
+                    #wall.combine()
+                elif random_tile>=25:
                     floor_dup = duplicate(floor_ent, position=Vec3(x_incrementer*10, -10, z_incrementer*10))
                     floor_dup.eternal=False
+                    #floor_ent.combine()
+                    
                 
                 x_incrementer += 1
                 indexer += 1
                 last_indexed_ent=random_tile
-
-
+            
+            
             if indexer == len(row): #if you reach the end of the row
                 indexer = 0 #reset the index tracker for the next row
                 x_incrementer = 0 #reset the x position
                 z_incrementer += 1 #move (physically) down one row
+            print("generating...")
 
         
 
-t1=threading.Thread(target=gen_level(maplevelname))
-t1.start()
+#t1=threading.Thread(target=gen_level(maplevelname))
+#t1.start()
+gen_level(maplevelname)
 #gen_level(maplevelname) #generates level with level data provided on line 18
 
 def update():
