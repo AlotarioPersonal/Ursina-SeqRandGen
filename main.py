@@ -16,7 +16,7 @@ from ursina.prefabs.first_person_controller import FirstPersonController
 from ursina.shaders import basic_lighting_shader
 import threading
 
-maplevelname = level_data.level_data_rand
+maplevelname = level_data.level_data_rand_big
 
 t_ev = threading.Event()
 app = Ursina() #define app
@@ -28,27 +28,22 @@ wall.geom=True
 
 
 window.editor_ui.disable()
+camera.ui.disable()
 
-player = FirstPersonController() #base ursina first person controller
-player.position=(0,0,0) #set pos
-player.mouse_sensitivity = Vec2(0, 0) #kill the mouse
+
+
 
 camera.clip_plane_far=75
-input_handler.bind('up arrow','w') #bind arrow keys forward and backward to movement, doom-style
-input_handler.bind('down arrow','s')
-input_handler.unbind('w')
-input_handler.unbind('a')
-input_handler.unbind('s')
-input_handler.unbind('d')
-player.cursor.color = color.dark_gray #turns the cursor red hur dur fuck face
-player.jump_height = 0 #kills jumping
-player_cam_speed = 2 #turn speed for the camera, left and right arrow keys
+
+
 skybox = Sky() #initialize skybox
 skybox.texture="skybox.png"
+total = Entity(model=None, collider=None)
+#skybox.color=color.black
+#skybox.position=player.position
 scene.fog_density=0.07
 scene.fog_color=color.black
 camera.fov = 110
-player.eternal=True
 skybox.eternal=True
 floor_ent.eternal=True
 wall.eternal=True
@@ -57,16 +52,15 @@ wall.position=Vec3(9999999,9999999,99999999)
 
 last_indexed_ent = 0
 
-player.gravity = 0.98 #rate of which player character falls
-player.speed = 13
-
 
 #define entity types
 
 
 def resetScene():
+    global total
     player.position=Vec3(0,0,0)
     scene.clear()
+    total = Entity(model=None, collider=None)
     player.position=Vec3(0,0,0)
 
 
@@ -132,22 +126,63 @@ def gen_level(map_dat): #generate level from 2D list. this is where the fun begi
                 z_incrementer += 1 #move (physically) down one row
             print("generating...")
 
+    for x in scene.entities:
+        print("GEORGE BUSH, COLUMBINE")
+        if x != wall and x != floor_ent and x!= total and x!=skybox:
+            x.parent=total
+            print("TERROR ON THE AIR LINE")
+    
+
+
         
 
-#t1=threading.Thread(target=gen_level(maplevelname))
-#t1.start()
-gen_level(maplevelname)
-#gen_level(maplevelname) #generates level with level data provided on line 18
+t1=threading.Thread(target=gen_level(maplevelname))
+t1.start()
+
+def distanceCheckFar():
+    for Entity in scene.entities:
+        if distance_xz(player, Entity) >= 25:
+            if Entity.enabled==True and Entity != player:
+                Entity.disable()
+        else:
+            if Entity.enabled==False and Entity != player:
+                Entity.enable()
 
 def update():
-    #
-    #print(player.speed)
-    
+    #distanceCheckFar()
     #doom/wolfenstein style turning
     if held_keys['left arrow']: #rotate left
         player.rotation_y -= player_cam_speed
     
     if held_keys['right arrow']: #rotate right
         player.rotation_y += player_cam_speed
+
+player = FirstPersonController() #base ursina first person controller
+player.position=(0,0,0) #set pos
+player.mouse_sensitivity = Vec2(0, 0) #kill the mouse
+player.cursor.color = color.red #turns the cursor gray hur dur fuck face
+player.jump_height = 0 #kills jumping
+player_cam_speed = 2 #turn speed for the camera, left and right arrow keys
+input_handler.bind('up arrow','w') #bind arrow keys forward and backward to movement, doom-style
+input_handler.bind('down arrow','s')
+input_handler.unbind('w')
+input_handler.unbind('a')
+input_handler.unbind('s')
+input_handler.unbind('d')
+player.eternal=True
+player.gravity = 0.98 #rate of which player character falls
+player.speed = 13
+
+total.combine()
+total.collider="mesh"
+total.texture="brick"
+total.ignore=True
+print('I CANT TAKE IT ANYMOOOOOORE')
+
+print("BEGIN SCENE ENTITIES")
+for h in scene.collidables:
+    print(h)
+    print("\n")
+print("END SCENE ENTITIES")
 
 app.run() #execute the application
