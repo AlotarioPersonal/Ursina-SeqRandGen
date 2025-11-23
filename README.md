@@ -5,6 +5,7 @@
 
 Contained in level-data.py is a repository of 2-dimensional levels. They can have three corresponding values in these lists--
 
+<img width="1198" height="718" alt="image" src="https://github.com/user-attachments/assets/7e4ec8e8-63a4-41ca-b219-1cb3fd98b012" />
 
 
 0 - Floor
