@@ -14,10 +14,9 @@
    -tkinter
    -random
    
-   V 0.5 PATCH:
-   -ursina 8.0 optimizations automagically applied, but still need collider optimization work
-   -tkinter simple dialog window, we're officially out of terminal requirement
-   -height randomization for the buildings
+   V 0.6 PATCH:
+   -custom made entity cubes purely for the sake of "please god, i need performance"
+   -removal of unessecary texture assets
 
 '''
 
@@ -29,19 +28,19 @@ else:
     os.system('clear')
 
 
-
 from ursina import * #get ursina library
 from maps import level_data #level data (see maps/level_data.py)
 from ursina.prefabs.first_person_controller import FirstPersonController
 from tkinter import simpledialog
+from maps import entity_data
 import threading
 import random
 maplevelname = level_data.level_data_rand_custom
-max_height = 0
+max_height = 10
 
 if maplevelname == level_data.level_data_rand_custom:
     global confirmation
-    confirmation = simpledialog.askstring("Input", "Would you like to save the model for this generation? [y/n]")
+    confirmation = simpledialog.askstring("Input", "Would you like to save the ursinamesh for this generation? [y/n]")
     x_len = simpledialog.askinteger("Input", "Enter the x-length of your generated world: ")
     y_len = simpledialog.askinteger("Input", "Enter the y-length of your generated world: ")
     max_height = simpledialog.askinteger("Input", "Enter the max building height of your generated world (Max 50): ")
@@ -51,8 +50,8 @@ if maplevelname == level_data.level_data_rand_custom:
 t_ev = threading.Event()
 app = Ursina() #define app
 Entity.geom=False
-from maps.entity_data import floor_ent
-floor_ent.geom=True
+from maps.entity_data import ent_generic
+ent_generic.geom=True
 
 
 
@@ -65,9 +64,9 @@ total = Entity(model=None, collider=None)
 
 camera.fov = 110
 skybox.eternal=True
-floor_ent.eternal=True
+ent_generic.eternal=True
 total.eternal=True
-floor_ent.position=Vec3(9999999,9999999,99999999)
+ent_generic.position=Vec3(9999999,9999999,99999999)
 
 last_indexed_ent = 0
 
@@ -100,7 +99,7 @@ def input(key):
 
 
 def gen_level(map_dat): #generate level from 2D list. this is where the fun begins
-    global floor_ent
+    global ent_generic
     global last_indexed_ent
     global cycles
     set_chance_height = 0
@@ -110,14 +109,14 @@ def gen_level(map_dat): #generate level from 2D list. this is where the fun begi
     for row in map_dat: #row for indexer
         for item in row: #column for indexer
             if item == 0: #if the item is a floor, make it a floor
-                floor_dup = duplicate(floor_ent, position=Vec3(x_incrementer*10, -10, z_incrementer*10), parent=total)
+                floor_dup = duplicate(entity_data.ent_floor, position=Vec3(x_incrementer*10, -10, z_incrementer*10), parent=total)
                 floor_dup.eternal=False
                 x_incrementer += 1 #the next block is 1 over from this item in the row (loads from left to right)
                 indexer += 1 #tracks where you are in the row, so this needs to be incremented
                 last_indexed_ent=0
                 cycles += 1
             elif item == 1: #otherwise, it's a wall, make it a wall
-                wall_dup = duplicate(floor_ent, position=Vec3(x_incrementer*10, -5, z_incrementer*10), parent=total)
+                wall_dup = duplicate(entity_data.ent_generic, position=Vec3(x_incrementer*10, -5, z_incrementer*10), parent=total)
                 wall_dup.eternal=False
                 x_incrementer += 1
                 indexer += 1
@@ -127,9 +126,8 @@ def gen_level(map_dat): #generate level from 2D list. this is where the fun begi
             elif item == 2: #random generation function
                 random_tile = random.randrange(0,100)
                 set_chance_wall = 25
-                
                 if random_tile<=set_chance_wall:
-                    wall_dup = duplicate(floor_ent, position=Vec3(x_incrementer*10, -5, z_incrementer*10), parent=total)
+                    wall_dup = duplicate(entity_data.ent_generic, position=Vec3(x_incrementer*10, -5, z_incrementer*10), parent=total)
                     wall_dup.eternal=False
                     wall_dup.color=color.white
                     set_chance_height = random.randint(1,max_height)
@@ -138,16 +136,12 @@ def gen_level(map_dat): #generate level from 2D list. this is where the fun begi
                     cycles += 1
                     set_chance_height=0
                 elif random_tile>=set_chance_wall:
-                    floor_dup = duplicate(floor_ent, position=Vec3(x_incrementer*10, -10, z_incrementer*10), parent=total)
+                    floor_dup = duplicate(entity_data.ent_floor, position=Vec3(x_incrementer*10, -10, z_incrementer*10), parent=total)
                     floor_dup.eternal=False
                     cycles += 1
-                    
-                
                 x_incrementer += 1
                 indexer += 1
                 last_indexed_ent=random_tile
-            
-            
             if indexer == len(row): #if you reach the end of the row
                 indexer = 0 #reset the index tracker for the next row
                 x_incrementer = 0 #reset the x position
@@ -156,19 +150,22 @@ def gen_level(map_dat): #generate level from 2D list. this is where the fun begi
             print("Generating level... " + str(cycles) + " cycles have passed")
     total.combine()
 
-        
 
 t1=threading.Thread(target=gen_level(maplevelname))
 t1.start()
 
-
-
 def update():
-    pass
-
-
+    
+    if player.position.y < -5:
+        player.position=(player.position.x, -5.0, player.position.z)
+        player.gravity=0.0
+    else:
+        player.gravity=0.087
+        
 player = FirstPersonController() #base ursina first person controller
 player.position=(0,max_height+5,0) #set pos
+if maplevelname==level_data.level_data_rand_custom:
+    player.position=(x_len/2,max_height+5,y_len/2)
 player.mouse_sensitivity = Vec2(0, 50) #kill the mouse
 player.cursor.color = color.red #turns the cursor gray hur dur fuck face
 player.jump_height = 5 #kills jumping
@@ -182,8 +179,8 @@ Entity.color="red"
 
 scene.clear()
 
-total.texture='resource_structure'
-from maps.entity_data import floor_ent
+
+from maps.entity_data import ent_generic
 
 for z in total.children: #debug
     print(str(z) + " TOTAL-CHILD")
@@ -196,11 +193,6 @@ if maplevelname==level_data.level_data_rand_custom:
         varname = random.randint(1, 9999999)
         fullname = str("dungeon_" + str(varname))
         total.model.save(name=fullname, folder= Path("models_compressed"))
-
-
-
 scene.fog_density=0.07
 scene.fog_color=color.black
-
-
 app.run() #execute the application
