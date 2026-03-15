@@ -2,10 +2,10 @@
 
    2D List-based Dimensional Exploration
 
-   Version 0.5, 2025-11-23
+   Version 0.6.2, 2026-3-15
 
    Exploration mock-raycast engine written in Python using URSINA.
-   Written in five days, expanded upon over the course of around a year.
+   Written in five days, expanded upon over the course of around two years.
    
 
    REQUIRED PACKAGES:
@@ -14,9 +14,8 @@
    -tkinter
    -random
    
-   V 0.6 PATCH:
-   -custom made entity cubes purely for the sake of "please god, i need performance"
-   -removal of unessecary texture assets
+   V 0.6.2 PATCH:
+   -restored cubes, this is now all on the collider optimizations. ursina, add a greedy meshing algorithm and my life is yours
 
 '''
 
@@ -52,16 +51,9 @@ app = Ursina() #define app
 Entity.geom=False
 from maps.entity_data import ent_generic
 ent_generic.geom=True
-
-
-
-
-
-
 skybox = Sky() #initialize skybox
 skybox.texture="skybox.png"
 total = Entity(model=None, collider=None)
-
 camera.fov = 110
 skybox.eternal=True
 ent_generic.eternal=True
@@ -71,7 +63,6 @@ ent_generic.position=Vec3(9999999,9999999,99999999)
 last_indexed_ent = 0
 
 cycles = 0
-
 
 def resetScene():
     global total
@@ -96,8 +87,6 @@ def input(key):
         quit()
         app.run()
 
-
-
 def gen_level(map_dat): #generate level from 2D list. this is where the fun begins
     global ent_generic
     global last_indexed_ent
@@ -109,7 +98,7 @@ def gen_level(map_dat): #generate level from 2D list. this is where the fun begi
     for row in map_dat: #row for indexer
         for item in row: #column for indexer
             if item == 0: #if the item is a floor, make it a floor
-                floor_dup = duplicate(entity_data.ent_floor, position=Vec3(x_incrementer*10, -10, z_incrementer*10), parent=total)
+                floor_dup = duplicate(entity_data.ent_generic, position=Vec3(x_incrementer*10, -10, z_incrementer*10), parent=total)
                 floor_dup.eternal=False
                 x_incrementer += 1 #the next block is 1 over from this item in the row (loads from left to right)
                 indexer += 1 #tracks where you are in the row, so this needs to be incremented
@@ -124,32 +113,27 @@ def gen_level(map_dat): #generate level from 2D list. this is where the fun begi
                 cycles += 1
                 wall_dup.color=color.white
             elif item == 2: #random generation function
-                random_tile = random.randrange(0,100)
-                set_chance_wall = 25
-                if random_tile<=set_chance_wall:
-                    wall_dup = duplicate(entity_data.ent_generic, position=Vec3(x_incrementer*10, -5, z_incrementer*10), parent=total)
-                    wall_dup.eternal=False
-                    wall_dup.color=color.white
-                    set_chance_height = random.randint(1,max_height)
+                random_tile = random.randrange(0,100) #grab a number between 1 and 100
+                set_chance_wall = 25 #number that differentiates between wall and floor. the chance is not 50/50 for traversal reasons
+                floor_dup = duplicate(entity_data.ent_generic, position=Vec3(x_incrementer*10, -10, z_incrementer*10), parent=total) #instance ent
+                floor_dup.eternal=False #remove eternal property making it removable
+                if random_tile<=set_chance_wall: #if this is a wall
+                    floor_dup.color=color.white #change its color
+                    set_chance_height = random.randint(1,max_height) #roll another number to determine the height
                     if set_chance_height >= 7:
-                        wall_dup.scale_y+=set_chance_height
-                    cycles += 1
-                    set_chance_height=0
-                elif random_tile>=set_chance_wall:
-                    floor_dup = duplicate(entity_data.ent_floor, position=Vec3(x_incrementer*10, -10, z_incrementer*10), parent=total)
-                    floor_dup.eternal=False
-                    cycles += 1
+                        floor_dup.scale_y+=set_chance_height #apply set_chance_height as height
+                    cycles += 1 #debug
+                    set_chance_height=0 #reset variable
                 x_incrementer += 1
                 indexer += 1
-                last_indexed_ent=random_tile
+                last_indexed_ent=2
             if indexer == len(row): #if you reach the end of the row
                 indexer = 0 #reset the index tracker for the next row
                 x_incrementer = 0 #reset the x position
                 z_incrementer += 1 #move (physically) down one row
                 cycles += 1
-            print("Generating level... " + str(cycles) + " cycles have passed")
-    total.combine()
-
+            print("Generating level... " + str(cycles) + " cycles have passed") #debug
+    total.combine() #combine all instances into 1
 
 t1=threading.Thread(target=gen_level(maplevelname))
 t1.start()
@@ -167,19 +151,14 @@ player.position=(0,max_height+5,0) #set pos
 if maplevelname==level_data.level_data_rand_custom:
     player.position=(x_len/2,max_height+5,y_len/2)
 player.mouse_sensitivity = Vec2(0, 50) #kill the mouse
-player.cursor.color = color.red #turns the cursor gray hur dur fuck face
+player.cursor.color = color.red #turns the cursor red hur dur fuck face
 player.jump_height = 5 #kills jumping
 player.eternal=True
 player.gravity = 0.087 #rate of which player character falls
 player.speed = 13
-
 total.collider='mesh'
 Entity.color="red"
-
-
 scene.clear()
-
-
 from maps.entity_data import ent_generic
 
 for z in total.children: #debug

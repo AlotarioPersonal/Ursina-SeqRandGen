@@ -7,6 +7,8 @@
 
 #the level data for level_data_rand_continent is still under optimization, run it only if your computer is decent enough to handle it
 
+level_data_rand_custom = ([])
+
 level_data_mini = ([0,0,1],
                    [0,0,1],
                    [0,1,1],)
